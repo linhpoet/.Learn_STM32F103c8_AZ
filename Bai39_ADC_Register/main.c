@@ -1,15 +1,23 @@
 #include "stm32f10x.h"
 
+void GPIO_ADC_Config();
+void ADC_Register_Config();
+
 int main()
-{
-	
+nn{
+	GPIO_ADC_Config();
+	ADC_Register_Config();
+	while(1)
+	{
+		adc_value = 
+	}
 }
 
 void GPIO_ADC_Config()
 {
 	/*enable clock for gpioA*/
 	RCC->APB2ENR |= 1<<2;
-	/*port A0 analog input mode*/
+	/*port A0-A7: analog input mode*/
 	GPIOA->CRL = 0;
 	
 }
@@ -26,7 +34,7 @@ void ADC_Register_Config()
 	/*Enable continuous conversion mode*/
 	ADC1->CR2 |= 1<<1;
 	/*Bits 19:17 EXTSEL[2:0]: External event select for regular group: 111: SWSTART */
-	ADC1->CR2 |= 8<<17;
+	ADC1->CR2 |= 7<<17;
 	/*0: Right Alignment*/
 	ADC1->CR2 &= ~(1<<11);
 	/*SQR1 Bits 23:20 L[3:0]: 8 conversion*/
@@ -49,5 +57,4 @@ void ADC_Register_Config()
 	while(ADC1->CR2 & 1<< 2)
 	/*start adc1 software conversion*/
 	ADC1->CR2 |= 5<<20;
-	
 }

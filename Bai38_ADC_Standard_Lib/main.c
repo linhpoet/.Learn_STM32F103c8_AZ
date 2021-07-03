@@ -8,12 +8,13 @@ volatile uint16_t u16AdcValues[NUMBER_OF_ADC_CHANNEL];
 void GPIO_Lib_ADC_Config();
 void ADC_Lib_Config();
 void DMA_ConfigChannel_1( uint32_t *pStartAddress, uint32_t *pDestination, uint32_t u32NumberDataTransfer);
+void DMA_ConfigChannel_11(uint32_t *pStartAddress, uint32_t *pDestination, uint32_t u32NumberDataTranfer);
 
 int main()
 {
 	GPIO_Lib_ADC_Config();
 	ADC_Lib_Config();
-	DMA_ConfigChannel_1((uint32_t *)ADC1_DR_ADDRESS, (uint32_t *)u16AdcValues, NUMBER_OF_ADC_CHANNEL);
+	DMA_ConfigChannel_1((uint32_t *)ADC1_DR_ADDRESS, (uint32_t *)&u16AdcValues, NUMBER_OF_ADC_CHANNEL);
 	while(1)
 	{
 		
@@ -38,10 +39,21 @@ void ADC_Lib_Config()
 	ADC_InitTypeDef ADC_InitStructure;
 	/*ADC configuration*/
 	ADC_InitStructure.ADC_Mode = ADC_Mode_Independent;
+	/*Scan Conversion Mode se duoc su dung de “quét” qua lan luot các kênh ADC trong quá trình doc du lieu*/
 	ADC_InitStructure.ADC_ScanConvMode = ENABLE;
+	/*
+	Continous Conversion Mode:
+		enable: ADC che do chuyen doi liên tuc.		
+		disable:sau moi lan chuyen doi, ta se phai gui lai lenh doc giá tri ADC de bat dau quá trình chuyen doi moi
+	*/
 	ADC_InitStructure.ADC_ContinuousConvMode = ENABLE;
 	ADC_InitStructure.ADC_ExternalTrigConv = ADC_ExternalTrigConv_None;
+	/*
+	Data alignment:	This bit is set and cleared by software. Refer to Figure 27.and Figure 28.
+	thanh ghi ADCx->DR luu gia tri doc duoc
+	*/
 	ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;
+	
 	ADC_InitStructure.ADC_NbrOfChannel = 8;
 	ADC_Init(ADC1, &ADC_InitStructure);
 	
@@ -100,18 +112,18 @@ void DMA_ConfigChannel_1( uint32_t *pStartAddress, uint32_t *pDestination, uint3
 			
 			Bit14 Mem2Mem = 0			; vi dang lam ADC to memory
 			Bits 13:12 PL = 10		; channel priority level : high
-			Bits 11:10 Msize = 00	; memory size = 8 bit
-			Bits 9:8	Psize = 01	; peripheral size = 16 bit
-			Bit 	7		MINC		= 0	;
-			Bit 	6		PINC 		= 1	;
-			Bit 	5 	CIRC		= 0	;	chi transfer 1 lan, neu bang 1 thi transfer lien tuc lap lai
-			Bit 	4 	DIR			= 1	;	Read from memory
-			Bit 	3 	TEIE		= 1	; TE interrupt enabled
-			Bit		2		HTIE		= 0	;	HT interrupt disabled
-			Bit 	1 	TCIE		= 1 ; TC interrupt enabled
-			Bit 	0 	EN			=	0	;	channel is enable
+			Bits 11:10 Msize = 01	; memory size = 16 bit, so bit cua data bo nho
+			Bits 9:8	Psize = 01	; peripheral size = 16 bit, so bit cua data ngoai vi
+			Bit 	7		MINC		= 1	; Memory increment mode enabled
+			Bit 	6		PINC 		= 0	; Peripheral increment mode disabled
+			Bit 	5 	CIRC		= 1	;	bang 1 thi transfer lien tuc lap lai, neu =0 thi chi transfer 1 lan
+			Bit 	4 	DIR			= 0	;	Read from peripheral
+			Bit 	3 	TEIE		= 0	; TE interrupt enabled, cho phép ng?t khi có l?i trong quá trình truy?n hay không.
+			Bit		2		HTIE		= 0	;	HT interrupt disabled, cho phép ng?t khi truy?n xong data ? ch? d? half word.	
+			Bit 	1 	TCIE		= 0 ; TC interrupt enabled, cho phép ng?t khi truy?n xong data ? ch? d? word.
+			Bit 	0 	EN			=	1	;	channel is enable
 	*/
-	DMA1_Channel1->CCR |= 0b010001001011010;
+	DMA1_Channel1->CCR |= 0b010010110100001;
 	/*6. Activate the channel by setting the ENABLE bit in the DMA_CCRx register*/
 	DMA1_Channel1->CCR |= 0x01;
 	

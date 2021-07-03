@@ -1,13 +1,24 @@
 #include "stm32f10x.h"
 
+void Delay_ms(uint32_t u32Delay);
+void DMA_ConfigChannel_1( uint32_t *pStartAddress, uint32_t *pDestination, uint32_t u32NumberDataTransfer);
+uint16_t u16Source[8] = {1,2,3,4,5,6,7,8};
+uint16_t u16Destination[8] = {};
+uint16_t u16Start = 1;
 int main()
 {
-	
+	DMA_ConfigChannel_1((uint32_t *)&u16Start, (uint32_t *)u16Destination, 8);
+	while(1)
+	{
+		u16Start++;
+		Delay_ms(1000);
+	}
 }
 
 /*	3 gia tri truyen vao ham DMA la: 	dia chi bat dau
 																			dia chi di chuyen toi(destination)
 																			size cua du lieu*/
+
 void DMA_ConfigChannel_1( uint32_t *pStartAddress, uint32_t *pDestination, uint32_t u32NumberDataTransfer)
 {
 	/*enable clock for DMA1*/
@@ -34,21 +45,40 @@ void DMA_ConfigChannel_1( uint32_t *pStartAddress, uint32_t *pDestination, uint3
 			mode, peripheral & memory data size, and interrupt after half and/or full transfer in the
 			DMA_CCRx register
 			
-			Bit14 Mem2Mem = 0			; vi dang lam ADC to memory
+			Bit14 Mem2Mem = 1			; vi dang lam memory to memory
 			Bits 13:12 PL = 10		; channel priority level : high
-			Bits 11:10 Msize = 00	; memory size = 8 bit
-			Bits 9:8	Psize = 01	; peripheral size = 16 bit
-			Bit 	7		MINC		= 0	;
-			Bit 	6		PINC 		= 1	;
-			Bit 	5 	CIRC		= 0	;	chi transfer 1 lan, neu bang 1 thi transfer lien tuc lap lai
-			Bit 	4 	DIR			= 1	;	Read from memory
-			Bit 	3 	TEIE		= 1	; TE interrupt enabled
-			Bit		2		HTIE		= 0	;	HT interrupt disabled
-			Bit 	1 	TCIE		= 1 ; TC interrupt enabled
-			Bit 	0 	EN			=	0	;	channel is enable
+			Bits 11:10 Msize = 01	; memory size = 16 bit, so bit cua data bo nho
+			Bits 9:8	Psize = 01	; peripheral size = 16 bit, so bit cua data ngoai vi
+			Bit 	7		MINC		= 1	; Memory increment mode enabled
+			Bit 	6		PINC 		= 0	; Peripheral increment mode disabled
+			Bit 	5 	CIRC		= 1	;	bang 1 thi transfer lien tuc lap lai, neu =0 thi chi transfer 1 lan
+			Bit 	4 	DIR			= 0	;	Read from peripheral
+			Bit 	3 	TEIE		= 0	; TE interrupt enabled, cho phép ng?t khi có l?i trong quá trình truy?n hay không.
+			Bit		2		HTIE		= 0	;	HT interrupt disabled, cho phép ng?t khi truy?n xong data ? ch? d? half word.	
+			Bit 	1 	TCIE		= 0 ; TC interrupt enabled, cho phép ng?t khi truy?n xong data ? ch? d? word.
+			Bit 	0 	EN			=	1	;	channel is enable
 	*/
-	DMA1_Channel1->CCR |= 0b010001001011010;
+	DMA1_Channel1->CCR |= 0b110010110100001;
 	/*6. Activate the channel by setting the ENABLE bit in the DMA_CCRx register*/
 	DMA1_Channel1->CCR |= 0x01;
 	
+}
+
+void Delay_ms(uint32_t u32Delay)
+{	
+	while (u32Delay)
+	{
+	/*dem ve 0*/
+	SysTick->LOAD = 72000 - 1;
+	SysTick->VAL = 0;
+	/*clear couterFlag; clock src selection is Processor clock(AHB) ; enable counter*/
+	SysTick->CTRL = 0x05;
+	
+	//while (!(SysTick->CTRL & (1<<16)))
+	while((SysTick->CTRL & (1<<16)) == 0)
+	{
+		/*wait until counterFlag = 1, 1ms*/
+	}
+	--u32Delay;
+	}
 }
