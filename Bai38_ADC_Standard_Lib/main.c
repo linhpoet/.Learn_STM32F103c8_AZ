@@ -1,6 +1,9 @@
 #include "stm32f10x.h"
 
 #define NUMBER_OF_ADC_CHANNEL 8U
+/*ADC1_DR_ADDRESS = ADC1_BASE( ADC1_Address) + ADC_DR_Address_offset (phu thuoc vao viec ADC_DR nam thu bao nhieu trong struct ADC_TypeDef) 
+									=	PERIPH_BASE + 0x10000 + 0x2400 + ADC_DR_Address_offset 
+									=0x40000000 + 0x10000 + 0x2400 + 0x4c*/
 #define ADC1_DR_ADDRESS    ((uint32_t)0x4001244C)
 
 volatile uint16_t u16AdcValues[NUMBER_OF_ADC_CHANNEL];
