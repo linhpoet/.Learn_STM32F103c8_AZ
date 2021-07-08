@@ -1,21 +1,25 @@
 #include "stm32f10x.h"
 
 void GPIO_ADC_Config();
-void ADC_Register_Config();
+void ADC_Interrupt_Register_Config();
+void ADC_IRQHandler();
 void DMA_ConfigChannel_1( uint32_t *pStartAddress, uint32_t *pDestination, uint32_t u32NumberDataTransfer);
 
 #define NUMBER_OF_ADC_CHANNEL 8U
 #define ADC1_DR_ADDRESS    ((uint32_t)0x4001244C)
 uint16_t u16Destination[NUMBER_OF_ADC_CHANNEL];
-uint32_t u32AdcValue1;
+uint32_t u32AdcValueIRQ;
+uint32_t u32AdcValueMain;
+uint32_t u32Count;
+
 int main()
 {
 	GPIO_ADC_Config();
-	ADC_Register_Config();
+	ADC_Interrupt_Register_Config();
 	DMA_ConfigChannel_1(ADC1_DR_ADDRESS, &u16Destination, NUMBER_OF_ADC_CHANNEL);
 	while(1)
 	{
-				u32AdcValue1 =(uint32_t)ADC1->DR;
+				u32AdcValueMain =(uint32_t)ADC1->DR;
 
 	}
 }
@@ -25,11 +29,10 @@ void GPIO_ADC_Config()
 	/*enable clock for gpioA*/
 	RCC->APB2ENR |= 1<<2;
 	/*port A0-A7: analog input mode*/
-	GPIOA->CRL = 0;
-	
+	GPIOA->CRL = 0;	
 }
 
-void ADC_Register_Config()
+void ADC_Interrupt_Register_Config()
 {
 	/*enable clock for ADC1*/
 	RCC->APB2ENR |= 1<<9;
@@ -65,6 +68,28 @@ void ADC_Register_Config()
 	/*start adc1 software conversion*/
 	ADC1->CR2 |= 5<<20;
 	
+	/*		ADC Interrupt Config		*/
+	/*clear eoc flag*/
+	ADC1->SR &= ~(1<<1);
+	/*EOC interrupt enabled. An interrupt is generated when the EOC bit is set.*/
+	ADC1->CR1 |= 1<<5;
+	/*enable global interrupt*/
+	NVIC->ISER[0] |= 1<<18;
+	
+		
+}
+
+void ADC_IRQHandler()
+{
+	/*eoc interrupt = 1 && eoc flag == 1 ??*/
+	if ((ADC1->CR1 & (1<<5)) && (ADC1->SR & (1<<1)))
+	{
+		u32Count++;
+		u32AdcValueIRQ =(uint32_t)ADC1->DR;
+	}
+	/*clear eoc flag*/
+	ADC1->SR &= ~(1<<1);
+
 }
 
 void DMA_ConfigChannel_1( uint32_t *pStartAddress, uint32_t *pDestination, uint32_t u32NumberDataTransfer)

@@ -1,14 +1,14 @@
 #include "stm32f10x.h"
 
 #define NUMBER_OF_ADC_CHANNEL 8U
-/*ADC1_DR_ADDRESS = ADC1_BASE( ADC1_Address) + ADC_DR_Address_offset (phu thuoc vao viec ADC_DR nam thu bao nhieu trong struct ADC_TypeDef) 
-									=	PERIPH_BASE + 0x10000 + 0x2400 + ADC_DR_Address_offset 
+/*ADC1_DR_ADDRESS 	= ADC1_BASE( ADC1_Address) + ADC_DR_Address_offset (phu thuoc vao viec ADC_DR nam thu bao nhieu trong struct ADC_TypeDef) 
+										=	PERIPH_BASE + 0x10000 + 0x2400 + ADC_DR_Address_offset 
 									=0x40000000 + 0x10000 + 0x2400 + 0x4c*/
 #define ADC1_DR_ADDRESS    ((uint32_t)0x4001244C)
 
 volatile uint16_t u16AdcValues[NUMBER_OF_ADC_CHANNEL];
-uint32_t u32AdcValue;
-uint32_t u32AdcValue1;
+uint32_t u32AdcValueIRQ;
+uint32_t u32AdcValueMain;
 uint32_t u32Count;
 
 void GPIO_Lib_ADC_Config();
@@ -24,7 +24,7 @@ int main()
 	DMA_ConfigChannel_1((uint32_t *)ADC1_DR_ADDRESS, (uint32_t *)&u16AdcValues, NUMBER_OF_ADC_CHANNEL);
 	while(1)
 	{
-		u32AdcValue1 = ADC1->DR;
+		u32AdcValueMain = ADC1->DR;
 	}
 }
 
@@ -46,12 +46,12 @@ void ADC_Lib_Config()
 	ADC_InitTypeDef ADC_InitStructure;
 	/*ADC configuration*/
 	ADC_InitStructure.ADC_Mode = ADC_Mode_Independent;
-	/*Scan Conversion Mode se duoc su dung de “quét” qua lan luot các kênh ADC trong quá trình doc du lieu*/
+	/*Scan Conversion Mode se duoc su dung de ?qu?t? qua lan luot c?c k?nh ADC trong qu? tr?nh doc du lieu*/
 	ADC_InitStructure.ADC_ScanConvMode = ENABLE;
 	/*
 	Continous Conversion Mode:
-		enable: ADC che do chuyen doi liên tuc.		
-		disable:sau moi lan chuyen doi, ta se phai gui lai lenh doc giá tri ADC de bat dau quá trình chuyen doi moi
+		enable: ADC che do chuyen doi li?n tuc.		
+		disable:sau moi lan chuyen doi, ta se phai gui lai lenh doc gi? tri ADC de bat dau qu? tr?nh chuyen doi moi
 	*/
 	ADC_InitStructure.ADC_ContinuousConvMode = ENABLE;
 	ADC_InitStructure.ADC_ExternalTrigConv = ADC_ExternalTrigConv_None;
@@ -89,6 +89,26 @@ void ADC_Lib_Config()
 	/*start adc1 software conversion*/
 	ADC_SoftwareStartConvCmd(ADC1, ENABLE);
 	
+		/*		ADC Interrupt Config		*/
+	/*clear eoc flag*/
+	ADC1->SR &= ~(1<<1);
+	/*EOC interrupt enabled. An interrupt is generated when the EOC bit is set.*/
+	ADC1->CR1 |= 1<<5;
+	/*enable global interrupt*/
+	NVIC->ISER[0] |= 1<<18;
+}
+
+void ADC_IRQHandler()
+{
+	/*eoc interrupt = 1 && eoc flag == 1 ??*/
+	if ((ADC1->CR1 & (1<<5)) && (ADC1->SR & (1<<1)))
+	{
+		u32Count++;
+		u32AdcValueIRQ =(uint32_t)ADC1->DR;
+	}
+	/*clear eoc flag*/
+	ADC1->SR &= ~(1<<1);
+
 }
 
 void DMA_ConfigChannel_1( uint32_t *pStartAddress, uint32_t *pDestination, uint32_t u32NumberDataTransfer)
@@ -125,9 +145,9 @@ void DMA_ConfigChannel_1( uint32_t *pStartAddress, uint32_t *pDestination, uint3
 			Bit 	6		PINC 		= 0	; Peripheral increment mode disabled
 			Bit 	5 	CIRC		= 1	;	bang 1 thi transfer lien tuc lap lai, neu =0 thi chi transfer 1 lan
 			Bit 	4 	DIR			= 0	;	Read from peripheral
-			Bit 	3 	TEIE		= 0	; TE interrupt enabled, cho phép ng?t khi có l?i trong quá trình truy?n hay không.
-			Bit		2		HTIE		= 0	;	HT interrupt disabled, cho phép ng?t khi truy?n xong data ? ch? d? half word.	
-			Bit 	1 	TCIE		= 0 ; TC interrupt enabled, cho phép ng?t khi truy?n xong data ? ch? d? word.
+			Bit 	3 	TEIE		= 0	; TE interrupt enabled, cho ph?p ng?t khi c? l?i trong qu? tr?nh truy?n hay kh?ng.
+			Bit		2		HTIE		= 0	;	HT interrupt disabled, cho ph?p ng?t khi truy?n xong data ? ch? d? half word.	
+			Bit 	1 	TCIE		= 0 ; TC interrupt enabled, cho ph?p ng?t khi truy?n xong data ? ch? d? word.
 			Bit 	0 	EN			=	1	;	channel is enable
 	*/
 	DMA1_Channel1->CCR |= 0b010010110100001;
