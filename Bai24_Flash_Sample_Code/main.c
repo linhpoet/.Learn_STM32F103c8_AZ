@@ -1,8 +1,9 @@
 #include "stm32f10x.h"
 
+#define LENGTH_BUFFER 8U
+
 #define FALSE 0U
 #define TRUE 1U
-#define LENGTH_BUFFER 8
 
 typedef enum
 {
@@ -10,22 +11,28 @@ typedef enum
 	FLASH_NO_ERRORS,      /* There is no errors */
 	FLASH_PENDING,        /* Working is pending  */
 	FLASH_ERRORS_TIMEOUT  /* There is a error due to timeout */
-} FlashStatus;
+	} FlashStatus;
 
-FlashStatus Flash_Erase(volatile uint32_t u32StartAddr);
+/**********************************************************************************************************************
+*                                              FLASH
+***********************************************************************************************************************/
+FlashStatus Flash_Erase(volatile uint32_t u32StartAddr, uint32_t u32TimeOut);
 FlashStatus Flash_Write_Syn(volatile uint32_t u32StartAddr, uint8_t* u8BufferWrite, uint32_t u32Length);
 FlashStatus Flash_Write_ASyn(volatile uint32_t u32StartAddr, uint8_t* u8BufferWrite, uint32_t u32Length);
 FlashStatus Flash_Read(volatile uint32_t u32StartAddr, uint8_t* u8BufferRead, uint32_t u32Length);
 void Flash_Unlock(void);
 
+FlashStatus Debug(volatile uint32_t u32StartAddr, uint32_t u32Test);
+
+uint8_t aDataWrite[LENGTH_BUFFER] = {0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17};
 _Bool bAsyn = FALSE;
-uint8_t aDataWrite[LENGTH_BUFFER] = {0,1,2,3,4,5,6,7};
+FlashStatus eReturnCode = FLASH_NO_ERRORS;
 
 int main()
 {
 	uint8_t aDataBuffer[LENGTH_BUFFER] = {0};
 	
-	Flash_Erase((uint32_t)0x08001000);
+	Flash_Erase((uint32_t)0x08001000, 100);
 	if (FLASH_NO_ERRORS != Flash_Write_Syn((uint32_t)0x08001000, aDataWrite, LENGTH_BUFFER))
 	{
 		/* Errors occured*/
@@ -36,11 +43,14 @@ int main()
 		/*Errors occured*/
 		while(1);
 	}
-	Flash_Erase((uint32_t)0x08001000);
+	Flash_Erase((uint32_t)0x08001000, 100);
 	
 	return 0;	
 }
 
+/**********************************************************************************************************************
+*                                              FLASH
+***********************************************************************************************************************/
 void Flash_Unlock(void)
 {
 	/* This sequence consists of two write cycles, where two key values (KEY1 and KEY2) are written to the FLASH_KEYR address*/
@@ -48,18 +58,18 @@ void Flash_Unlock(void)
 	FLASH->KEYR = 0xCDEF89AB;
 }
 
-FlashStatus Flash_Erase(volatile uint32_t u32StartAddr)
+FlashStatus Flash_Erase(volatile uint32_t u32StartAddr, uint32_t u32TimeOut)
 {
 	/* Check that no Flash memory operation is ongoing by checking the BSY bit in the FLASH_CR register */
-	/*while(((FLASH->SR&FLASH_SR_BSY) == FLASH_SR_BSY) && (u32TimeOut > 0U))
+	while(((FLASH->SR&FLASH_SR_BSY) == FLASH_SR_BSY) && (u32TimeOut > 0U))
 	{
-		// Wating for Bsy bit
+		/*  Wating for Bsy bit */
 		u32TimeOut --;
 		if (u32TimeOut == 0)
 		{
 			return FLASH_ERRORS_TIMEOUT;
 		}
-	}/*
+	}
 	/* Check unlock sequences */
 	if ((FLASH->CR&FLASH_CR_LOCK) == FLASH_CR_LOCK )
 	{

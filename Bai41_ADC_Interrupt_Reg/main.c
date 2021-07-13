@@ -2,7 +2,7 @@
 
 void GPIO_ADC_Config();
 void ADC_Interrupt_Register_Config();
-void ADC_IRQHandler();
+void ADC1_2_IRQHandler();
 void DMA_ConfigChannel_1( uint32_t *pStartAddress, uint32_t *pDestination, uint32_t u32NumberDataTransfer);
 
 #define NUMBER_OF_ADC_CHANNEL 8U
@@ -16,7 +16,7 @@ int main()
 {
 	GPIO_ADC_Config();
 	ADC_Interrupt_Register_Config();
-	DMA_ConfigChannel_1(ADC1_DR_ADDRESS, &u16Destination, NUMBER_OF_ADC_CHANNEL);
+	//DMA_ConfigChannel_1(ADC1_DR_ADDRESS, &u16Destination, NUMBER_OF_ADC_CHANNEL);
 	while(1)
 	{
 				u32AdcValueMain =(uint32_t)ADC1->DR;
@@ -79,7 +79,7 @@ void ADC_Interrupt_Register_Config()
 		
 }
 
-void ADC_IRQHandler()
+void ADC1_2_IRQHandler()
 {
 	/*eoc interrupt = 1 && eoc flag == 1 ??*/
 	if ((ADC1->CR1 & (1<<5)) && (ADC1->SR & (1<<1)))

@@ -13,15 +13,14 @@ uint32_t u32Count;
 
 void GPIO_Lib_ADC_Config();
 void ADC_Lib_Config();
-void ADC_IRQHandler(void);
+void ADC1_2_IRQHandler();
 void DMA_ConfigChannel_1( uint32_t *pStartAddress, uint32_t *pDestination, uint32_t u32NumberDataTransfer);
-void DMA_ConfigChannel_11(uint32_t *pStartAddress, uint32_t *pDestination, uint32_t u32NumberDataTranfer);
 
 int main()
 {
 	GPIO_Lib_ADC_Config();
 	ADC_Lib_Config();
-	DMA_ConfigChannel_1((uint32_t *)ADC1_DR_ADDRESS, (uint32_t *)&u16AdcValues, NUMBER_OF_ADC_CHANNEL);
+	//DMA_ConfigChannel_1((uint32_t *)ADC1_DR_ADDRESS, (uint32_t *)&u16AdcValues, NUMBER_OF_ADC_CHANNEL);
 	while(1)
 	{
 		u32AdcValueMain = ADC1->DR;
@@ -89,6 +88,8 @@ void ADC_Lib_Config()
 	/*start adc1 software conversion*/
 	ADC_SoftwareStartConvCmd(ADC1, ENABLE);
 	
+/************ Doan can Check *********/
+
 		/*		ADC Interrupt Config		*/
 	/*clear eoc flag*/
 	ADC1->SR &= ~(1<<1);
@@ -98,7 +99,7 @@ void ADC_Lib_Config()
 	NVIC->ISER[0] |= 1<<18;
 }
 
-void ADC_IRQHandler()
+void ADC1_2_IRQHandler()
 {
 	/*eoc interrupt = 1 && eoc flag == 1 ??*/
 	if ((ADC1->CR1 & (1<<5)) && (ADC1->SR & (1<<1)))
@@ -108,8 +109,8 @@ void ADC_IRQHandler()
 	}
 	/*clear eoc flag*/
 	ADC1->SR &= ~(1<<1);
-
 }
+/****************************************/
 
 void DMA_ConfigChannel_1( uint32_t *pStartAddress, uint32_t *pDestination, uint32_t u32NumberDataTransfer)
 {
