@@ -2,13 +2,15 @@
 
 void GPIO_Config_Lib();
 void GPIO_Config();
-void PWM_Timer2_Register(int duty);
+void PWM_Timer2_Register(uint32_t duty);
 
 int main()
 {
 	/*GPIOA*/
 	GPIO_Config_Lib();
-	PWM_Timer2_Register(1);
+		/*APB1 prescaller = 4 => TIMxCLK = 72M/4*2 = 36M*/
+		//RCC->CFGR |= 5<<8;
+	PWM_Timer2_Register(50);
 	while(1)
 	{	
 		
@@ -39,7 +41,7 @@ void GPIO_Config()
 	GPIOA->CRH = 0x11111111;
 }
 
-void PWM_Timer2_Register(int duty)
+void PWM_Timer2_Register(uint32_t duty)
 {
 	/*enable clock for timer 2*/
 	RCC->APB1ENR |= 0x01;
@@ -50,7 +52,7 @@ void PWM_Timer2_Register(int duty)
 	/*110-PWM mode 1*/
 	TIM2->CCMR1 = 0x60;
 	/*select duty cycle-gia tri %: thoi gian muc 1 trong 1 chu ky pwm*/
-	TIM2->CCR1 = (duty*10000/100);
+	TIM2->CCR1 = duty*10000/100;
 	/*
 		-CC1E: Capture/compare 1 output enable
 		-CC1P: 0: OC1 active high or 1: low

@@ -1,32 +1,24 @@
-/*Le Quang Linh*/
-
 #include "stm32f10x.h"
 
 void GPIO_ADC_Config();
 void ADC_Register_Config();
 void DMA_ConfigChannel_1( uint32_t *pStartAddress, uint32_t *pDestination, uint32_t u32NumberDataTransfer);
 
-#define NUMBER_OF_ADC_CHANNEL 8U
+#define NUMBER_OF_ADC_CHANNEL 1U
 #define ADC1_DR_ADDRESS    ((uint32_t)0x4001244C)
 uint16_t u16Destination[NUMBER_OF_ADC_CHANNEL];
-uint16_t u16AdcAverage = 0x7d0;
-uint16_t u16Senso[NUMBER_OF_ADC_CHANNEL] = {1,0,0,0,0,0,0,1,0};
+uint16_t u16AdcValue;
 uint32_t u32AdcValue1;
+uint32_t u32AdcValueIRQ;
+uint32_t u32Count;
 int main()
 {
 	GPIO_ADC_Config();
 	ADC_Register_Config();
-	DMA_ConfigChannel_1(ADC1_DR_ADDRESS, &u16Destination, NUMBER_OF_ADC_CHANNEL);
-	u16Senso[1] = 1;
+	DMA_ConfigChannel_1(ADC1_DR_ADDRESS, &u16AdcValue, NUMBER_OF_ADC_CHANNEL);
 	while(1)
 	{
-		for(int i=0; i<=7; i++)
-		{
-			if (u16Destination < u16AdcAverage)
-				u16Senso[i] = 0;
-			else u16Senso[i]=01;
-		}
-		u32AdcValue1 =(uint32_t)ADC1->DR;
+				u32AdcValue1 =(uint32_t)ADC1->DR;
 
 	}
 }
@@ -55,11 +47,11 @@ void ADC_Register_Config()
 	ADC1->CR2 |= 7<<17;
 	/*0: Right Alignment*/
 	ADC1->CR2 &= ~(1<<11);
-	/*SQR1 Bits 23:20 L[3:0]: 8 conversion*/
-	ADC1->SQR1 |= (8-1)<<20;
+	/*SQR1 Bits 23:20 L[3:0] = 0000: 1 conversion*/
+	ADC1->SQR1 &= ~((16-1)<<20);
 	
-	/*ADC sample time 41.5 cycles for 8 channel 0:7*/
-	ADC1->SMPR2 |= 0b100100100100100100100100;
+	/*ADC sample time 41.5 cycles for 1 channel*/
+	ADC1->SMPR2 = 0b100;
 	
 	/*1: Enable ADC and to start conversion*/
 	ADC1->CR2 |= 0x01;
@@ -76,6 +68,28 @@ void ADC_Register_Config()
 	/*start adc1 software conversion*/
 	ADC1->CR2 |= 5<<20;
 	
+		/*		ADC Interrupt Config		*/
+	/*clear eoc flag*/
+	ADC1->SR &= ~(1<<1);
+	/*EOC interrupt enabled. An interrupt is generated when the EOC bit is set.*/
+	ADC1->CR1 |= 1<<5;
+	/*enable global interrupt*/
+	NVIC->ISER[0] |= 1<<18;
+
+	
+}
+
+void ADC_IRQHandler()
+{
+	/*eoc interrupt = 1 && eoc flag == 1 ??*/
+	if ((ADC1->CR1 & (1<<5)) && (ADC1->SR & (1<<1)))
+	{
+		u32Count++;
+		u32AdcValueIRQ =(uint32_t)ADC1->DR;
+	}
+	/*clear eoc flag*/
+	ADC1->SR &= ~(1<<1);
+
 }
 
 void DMA_ConfigChannel_1( uint32_t *pStartAddress, uint32_t *pDestination, uint32_t u32NumberDataTransfer)
@@ -108,16 +122,16 @@ void DMA_ConfigChannel_1( uint32_t *pStartAddress, uint32_t *pDestination, uint3
 			Bits 13:12 PL = 10		; channel priority level : high
 			Bits 11:10 Msize = 01	; memory size = 16 bit, so bit cua data bo nho
 			Bits 9:8	Psize = 01	; peripheral size = 16 bit, so bit cua data ngoai vi
-			Bit 	7		MINC		= 1	; Memory increment mode enabled
+			Bit 	7		MINC		= 0	; Memory increment mode disable
 			Bit 	6		PINC 		= 0	; Peripheral increment mode disabled
 			Bit 	5 	CIRC		= 1	;	bang 1 thi transfer lien tuc lap lai, neu =0 thi chi transfer 1 lan
 			Bit 	4 	DIR			= 0	;	Read from peripheral
-			Bit 	3 	TEIE		= 0	; TE interrupt enabled, cho phép ng?t khi có l?i trong quá trình truy?n hay không.
-			Bit		2		HTIE		= 0	;	HT interrupt disabled, cho phép ng?t khi truy?n xong data ? ch? d? half word.	
-			Bit 	1 	TCIE		= 0 ; TC interrupt enabled, cho phép ng?t khi truy?n xong data ? ch? d? word.
+			Bit 	3 	TEIE		= 0	; TE interrupt enabled, cho ph?p ng?t khi c? l?i trong qu? tr?nh truy?n hay kh?ng.
+			Bit		2		HTIE		= 0	;	HT interrupt disabled, cho ph?p ng?t khi truy?n xong data ? ch? d? half word.	
+			Bit 	1 	TCIE		= 0 ; TC interrupt enabled, cho ph?p ng?t khi truy?n xong data ? ch? d? word.
 			Bit 	0 	EN			=	1	;	channel is enable
 	*/
-	DMA1_Channel1->CCR |= 0b010010110100001;
+	DMA1_Channel1->CCR |= 0b010010100100001;
 	/*6. Activate the channel by setting the ENABLE bit in the DMA_CCRx register*/
 	DMA1_Channel1->CCR |= 0x01;
 	
