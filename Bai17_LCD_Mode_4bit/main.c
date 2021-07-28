@@ -1,4 +1,4 @@
-#include "My_Lcd_4bit_lib.h"
+#include "Stm32_Lib_LCD.h"
 
 
 void __delay_ms(uint32_t u32Delay);
@@ -14,8 +14,8 @@ int main(void)
 	
 	lcd_string("chuc mung");
     lcd_command(Goto2);
-    int x =210+300;
-    lcd_number(x);
+    int x =230+300;
+    lcd_Number(x);
 
   while (1)
   {

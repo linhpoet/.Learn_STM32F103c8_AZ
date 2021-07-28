@@ -1,4 +1,4 @@
-#include "My_Lcd_4bit_lib.h""
+#include "Stm32_Lib_LCD.h""
 
 
 void delay(uint32_t nCount){

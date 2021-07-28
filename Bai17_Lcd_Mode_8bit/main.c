@@ -11,7 +11,7 @@ int main(void)
 	lcd_command(ClearDisplay);
 	lcd_string("lcd mode 8 bit");
 	lcd_command(Goto2);
-	int rate = 200123;	
+	int rate = 222;	
 	lcd_Number(rate);
 
   while (1)

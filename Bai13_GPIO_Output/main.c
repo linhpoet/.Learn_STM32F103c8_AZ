@@ -19,7 +19,7 @@ int main()
 		ptr->ODR = 0xffff;*/
 		
 		GPIOC->ODR = 0xffff;
-		Delay_Ms(1000);
+		Delay_Ms(3000);
 		GPIOC->ODR = 0x00;
 		Delay_Ms(1000);
 	}

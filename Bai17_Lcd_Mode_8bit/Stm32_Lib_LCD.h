@@ -2,6 +2,8 @@
 #include <string.h>
 #include <stdint.h>
 
+#define LCD_8bit
+
 #define RS              0
 #define RW              1
 #define E               2
