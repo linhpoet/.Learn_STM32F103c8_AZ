@@ -27,9 +27,14 @@ int main()
 }
 
 void GPIO_Register_Config()
-{
+{	
+	/*enable clock for GPIO_A,B,C,D,E*/
+	RCC->APB2ENR |= 1<<2;
 	RCC->APB2ENR |= 1<<3;
 	RCC->APB2ENR |= 1<<4;
+	RCC->APB2ENR |= 1<<5;
+	RCC->APB2ENR |= 1<<6;
+
 	/*GPIOC[15:8] output Pushpull*/
 	GPIOC->CRH = 0x11111111;
 }
