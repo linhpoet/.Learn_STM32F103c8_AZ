@@ -5,16 +5,18 @@ void Spi_2_Init(void);
 void SPI2_SentData(uint8_t u8data);
 void Delay_ms(uint32_t u32Delay);
 
-uint8_t u8Buff[256U] = {0U};
-
+uint16_t u16Buff[256] = {0U};
+uint16_t u16Data = 0xffd;
+uint8_t u8Data = 0x80;
+#define SPI2DR (uint32_t)0x4000380C
 
 int main(void)
 {
 	for (int i=0;i < 256; i++)
 	{
-		u8Buff[i] = i;
+		u16Buff[i] = i;
 	}
-	uint8_t u8Data = 0x80;
+
 	Gpio_Init();
 	Spi_2_Init();
 	
@@ -25,15 +27,13 @@ int main(void)
 	{
 		/*b12 = 0*/
 		GPIOB->ODR &= ~(1<<12);
+		
 		for(int i=0; i<256; i++)
 		{
-			/*sent data*/
-			SPI2->DR = u8Buff[i];
-			/*wait*/
-			while (((SPI2 ->SR) & SPI_I2S_FLAG_BSY) != 0)
-			{
-		
-			}
+		/*sent data*/
+		SPI2->DR = u16Buff[i];
+		/*wait*/
+		while (((SPI2 ->SR) & SPI_I2S_FLAG_BSY) != 0);
 		}
 		/*b12 = 1*/
 		GPIOB->ODR |= 1<<12;	
@@ -105,6 +105,9 @@ void Spi_2_Init(void)
 	
 	/* Bit 0 CPHA: Clock phase -> 0: CK to 0 when idle*/
 	//SPI2->CR1 |= 0x1;
+	
+	/*16bit data format*/
+	SPI2->CR1 |= 1<<11;
 	
 	/* SPI enable */
 	SPI2->CR1 |= 0x40U;
