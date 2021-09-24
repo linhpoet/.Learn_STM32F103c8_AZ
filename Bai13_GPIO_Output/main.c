@@ -7,7 +7,7 @@ void GPIO_Config_Lib();
 
 int main()
 {
-	GPIO_Lib_Config();
+	GPIO_Register_Config();
 	
 	while(1)
 	{
@@ -18,9 +18,12 @@ int main()
 		/*GPIO_TypeDef *ptr = 0x40000000 + 0x10000 + 0x1000;
 		ptr->ODR = 0xffff;*/
 		
-		GPIOC->ODR = 0xffff;
-		Delay_Ms(3000);
-		GPIOC->ODR = 0x00;
+		GPIOC->ODR |= 1<<13;
+		GPIOB->ODR |= 1<<9;
+		Delay_Ms(1000);
+		GPIOC->ODR &= ~(1<<13);
+		GPIOB->ODR &= ~(1<<9);
+
 		Delay_Ms(1000);
 	}
 
@@ -37,6 +40,13 @@ void GPIO_Register_Config()
 
 	/*GPIOC[15:8] output Pushpull*/
 	GPIOC->CRH = 0x11111111;
+	
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+	GPIO_InitTypeDef GPIO_InitStructure;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9 ;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
 }
 void GPIO_Lib_Config()
 {
