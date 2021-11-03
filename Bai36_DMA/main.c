@@ -1,13 +1,13 @@
 #include "stm32f10x.h"
 
 void Delay_ms(uint32_t u32Delay);
-void DMA_ConfigChannel_1( uint32_t *pStartAddress, uint32_t *pDestination, uint32_t u32NumberDataTransfer);
+void DMA_ConfigChannel_1( uint32_t *PeripheralAddr, uint32_t *MemoryAddr, uint32_t u32NumberDataTransfer);
 uint16_t u16Source[8] = {1,2,3,4,5,6,7,8};
-uint16_t u16Destination[8] = {};
+uint16_t u16Destination[8] = {9,10,11,12,13,14,15,16};
 uint16_t u16Start = 1;
 int main()
 {
-	DMA_ConfigChannel_1((uint32_t *)&u16Source, (uint32_t *)u16Destination, 4);
+	DMA_ConfigChannel_1((uint32_t *)&u16Source, (uint32_t *)u16Destination, 8);
 	while(1)
 	{
 		u16Start++;
@@ -15,11 +15,8 @@ int main()
 	}
 }
 
-/*	3 gia tri truyen vao ham DMA la: 	dia chi bat dau
-																			dia chi di chuyen toi(destination)
-																			size cua du lieu*/
 
-void DMA_ConfigChannel_1( uint32_t *pStartAddress, uint32_t *pDestination, uint32_t u32NumberDataTransfer)
+void DMA_ConfigChannel_1( uint32_t *PeripheralAddr, uint32_t *MemoryAddr, uint32_t u32NumberDataTransfer)
 {
 	/*enable clock for DMA1*/
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
@@ -28,12 +25,12 @@ void DMA_ConfigChannel_1( uint32_t *pStartAddress, uint32_t *pDestination, uint3
 	1.	Set the perifheral register address in the DMA_CCARx register
 			The data will be moved from/to this address to/from the memory after the peripheral event
 	*/
-	DMA1_Channel1->CPAR = (uint32_t)pStartAddress;
+	DMA1_Channel1->CPAR = (uint32_t)PeripheralAddr;
 	/*
 	2.	Set the memory address in the DMA_CMARx register. 
 			The data will be written to or read from this memory after the peripheral event.
 	*/
-	DMA1_Channel1->CMAR = (uint32_t) pDestination;
+	DMA1_Channel1->CMAR = (uint32_t) MemoryAddr;
 	/*
 	3.	Configure the total number of data to be transferred in the DMA_CNDTRx register.
 			After each peripheral event, this value will be decremented.
