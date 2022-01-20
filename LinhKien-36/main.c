@@ -17,7 +17,7 @@ typedef enum
 	FLASH_NO_ERRORS,      /* There is no errors */
 	FLASH_PENDING,        /* Working is pending  */
 	FLASH_ERRORS_TIMEOUT  /* There is a error due to timeout */
-} FlashStatus;
+	} FlashStatus;
 
 /**********************************************************************************************************************
 *                                              Union
@@ -154,17 +154,26 @@ uint32_t u32Test = 0U;
 uint16_t u16ValueAdc1Channel;
 
 int main()
-{ 
-	Timer2_StandardLibrary();
-	GPIO_Config();
-	while (1)
+{
+	uint8_t aDataBuffer[LENGTH_BUFFER] = {0};
+	
+	Flash_Erase((uint32_t)0x08001000, 100);
+	if (FLASH_NO_ERRORS != Flash_Write_Syn((uint32_t)0x08001000, aDataWrite, LENGTH_BUFFER))
 	{
-		GPIO_SetBits(GPIOC, GPIO_PIN_13);
-		Delay_Timer2_StandardLibrary_Ms(1000);
-		GPIO_ResetBits(GPIOC, GPIO_Pin_13);
-		Delay_Timer2_StandardLibrary_Ms(1000);
+		/* Errors occured*/
+		while(1);
 	}
+	if (FLASH_NO_ERRORS != Flash_Read((uint32_t)0x08001000, aDataBuffer, LENGTH_BUFFER))
+	{
+		/*Errors occured*/
+		while(1);
+	}
+	Flash_Erase((uint32_t)0x08001000, 100);
+	
+	return 0;	
 }
+
+
 void ReverseNumberBin(uint32_t *pNumber)
 {
 	uint8_t u8Count = 32U;

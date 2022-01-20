@@ -11,39 +11,49 @@ void My_USART_SendData(USART_TypeDef* pUSARTx, uint16_t u8Data);
 uint8_t My_USART_ReceiveData(USART_TypeDef* pUSARTx);
 void DMA_ConfigChannel_1( uint32_t *pPeripheralAddr, uint32_t *pMemoryAddr, uint32_t u32NumberDataTransfer);
 
-uint8_t u8Buffer_Transmit[5] = {1,2,3,4,5};
+uint8_t u8Buffer_Transmit[5] = "abcde123";
 uint16_t u16Buffer_Transmit[5] = {5,6,7,8,9};
 uint8_t u8Buffer_Receive[10] = {};
 uint8_t Rx=0;
-	
+
 int main()
 {
 	GPIO_Config();
 	USART_Lib_Config(USART2);
 
-	/*transmit with DMA*/
-	//DMA_ConfigChannel_1(&(USART2->DR), u8Buffer_Transmit, 5);
 	while(1)
 	{
-		/*	Transmit and Receive to/from Laptop without interrupt	*/
-//		config and enable interrupt in USART_Config
-		
-		/*	Transmit and Receive to/from Laptop without interrupt	*/
 		if(USART_GetFlagStatus(USART2, USART_FLAG_RXNE) == SET)
 		{
-			
 			u8Buffer_Receive[Rx] = My_USART_ReceiveData(USART2);
-			//send to Laptop
-			My_USART_SendData(USART2, u8Buffer_Receive[Rx]);
-			while(USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET);
-			//neu gui \n thi ket thuc chuoi du lieu
-			if(u8Buffer_Receive[Rx] == '\n') 
-			{
-				Rx=0;
-				//can xoa cac phan tu con lai cua mang truoc do
-			}
-			else Rx++;
+			Rx++;
 		}
+	}
+		
+	
+	/*transmit with DMA*/
+	//DMA_ConfigChannel_1(&(USART2->DR), u8Buffer_Transmit, 5);
+//	while(1)
+//	{
+//		/*	Transmit and Receive to/from Laptop without interrupt	*/
+////		config and enable interrupt in USART_Config
+//		
+//		/*	Transmit and Receive to/from Laptop without interrupt	*/
+//		if(USART_GetFlagStatus(USART2, USART_FLAG_RXNE) == SET)
+//		{
+//			
+//			u8Buffer_Receive[Rx] = My_USART_ReceiveData(USART2);
+//			//send to Laptop
+//			My_USART_SendData(USART2, u8Buffer_Receive[Rx]);
+//			while(USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET);
+//			//neu gui \n thi ket thuc chuoi du lieu
+//			if(u8Buffer_Receive[Rx] == '\n') 
+//			{
+//				Rx=0;
+//				//can xoa cac phan tu con lai cua mang truoc do
+//			}
+//			else Rx++;
+//		}
 		
 		
 //		for(int i=0; i<5; i++)
@@ -54,7 +64,6 @@ int main()
 //		}
 		
 		//Delay_ms(10);
-	}
 }
 
 
@@ -115,7 +124,7 @@ void USART_Lib_Config(USART_TypeDef* USARTx)
 	USART_Cmd(USARTx, ENABLE);
 }
 
-void USART_Reg_Config(USART_TypeDef* USARTx)
+void USART_Reg_Config(USART_TypeDef* pUSARTx)
 {
 	/*gpio - PA2:TX		PA3:RX*/
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
@@ -133,27 +142,27 @@ void USART_Reg_Config(USART_TypeDef* USARTx)
 	/*usart2 Reg Config*/
 		RCC->APB1ENR |= 1<<17;
 		/*baudrate = 9600*/
-		USARTx->BRR = 0xEA6;
+		pUSARTx->BRR = 0xEA6;
 		/*Bit 12 M = 0: 1 Start bit, 9 Data bits, n Stop bit*/
-		USARTx->CR1 |= (1<<12);
+		pUSARTx->CR1 |= (1<<12);
 		/*Bit 10 PCE: Parity control enable*/
-		USARTx->CR1 |= (1<<10);
+		pUSARTx->CR1 |= (1<<10);
 		/*Odd Parity*/
-		USARTx->CR1 |= 1<<9;
+		pUSARTx->CR1 |= 1<<9;
 		/*Bit 3 TE: Transmitter enable*/
-		USARTx->CR1 |= 1<<3;
+		pUSARTx->CR1 |= 1<<3;
 		/*Bit 2 RE: Receiver enable*/
-		USARTx->CR1 |= 1<<2;
+		pUSARTx->CR1 |= 1<<2;
 		/*Bits 13:12 = 00: 1.5 STOP bits*/
-		USARTx->CR2 |= (3<<12);
+		pUSARTx->CR2 |= (3<<12);
 		/*00 - hardware flow control disabled*/
-		USARTx->CR3 &= ~(3<<8);
+		pUSARTx->CR3 &= ~(3<<8);
 		
 		/*DMA enable transmitter*/
-		USARTx->CR3 |= 1<<7;
+		pUSARTx->CR3 |= 1<<7;
 
 		
-			/*Interrupt Config*/
+			/*Core Interrupt Config*/
 	NVIC_InitTypeDef NVIC_InitStrut;
 	NVIC_InitStrut.NVIC_IRQChannel = USART2_IRQn;
 	NVIC_InitStrut.NVIC_IRQChannelPreemptionPriority = 0;
@@ -161,10 +170,26 @@ void USART_Reg_Config(USART_TypeDef* USARTx)
 	NVIC_InitStrut.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStrut);
 	
+			/*Core Interrupt Config by using Register*/
+	uint8_t IRQn;
+	if(pUSARTx == USART1)
+		IRQn = 37;
+	else if(pUSARTx == USART2)
+		IRQn = 38;
+	else if(pUSARTx == USART3)
+		IRQn = 39;
+	else if(pUSARTx == UART4)
+		IRQn = 52;
+	else if(pUSARTx == UART5)
+		IRQn = 53;
+	NVIC->ISER[1] |= 1<<(IRQn-32);
+	
+		
+	
 	/*enable RxNE interrupt*/
 	//USARTx->CR1 |= 1<<5;
 	/*Bit 13 UE: USART enable*/
-	USARTx->CR1 |= 1<<13;	
+	pUSARTx->CR1 |= 1<<13;	
 }
 
 void USART2_IRQHandler(void)
@@ -188,6 +213,7 @@ void My_USART_SendData(USART_TypeDef* pUSARTx, uint16_t Data)
 	/*wait*/
 	while(USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET);
 }
+
 
 uint8_t My_USART_ReceiveData(USART_TypeDef* pUSARTx)
 {	

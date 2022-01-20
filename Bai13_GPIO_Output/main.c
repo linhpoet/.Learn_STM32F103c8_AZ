@@ -5,11 +5,7 @@ void GPIO_Register_Config();
 void GPIO_Lib_Config();
 void GPIO_Config_Lib();
 #define dem1 0x80002312
-typedef struct {
-   char name[30];
-    uint16_t id;
-    uint8_t age;
-}sinhvien;
+
 int main()
 {
 	GPIO_Register_Config();
@@ -22,14 +18,13 @@ int main()
 			/*((GPIO_TypeDef*) (((uint32_t)0x40000000) + 0x10000 + 0x1000)) ->ODR = 0xffff;*/			//kieu nhu dat struct gpio_typedef vao dia chi cua GPIOx
 			/*GPIO_TypeDef *ptr = 0x40000000 + 0x10000 + 0x1000;
 			ptr->ODR = 0xffff;*/
-		((sinhvien*)(((uint32_t)0x346422000) + 0x10000 + 0x1000))->id = 0x10;
 		GPIOC->ODR |= 1<<13;
 		GPIOB->ODR |= 1<<9;
-		Delay_Ms(1000);
+		Delay_Ms(100);
 		GPIOC->ODR &= ~(1<<13);
 		GPIOB->ODR &= ~(1<<9);
 
-		Delay_Ms(1000);
+		Delay_Ms(100);
 		dem++;
 		//ADC_SMPR1_SMP17 = 0x18;
 	}
